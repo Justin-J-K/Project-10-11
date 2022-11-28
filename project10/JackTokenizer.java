@@ -188,10 +188,6 @@ public class JackTokenizer {
         }
 
         appendToken(currentToken);
-        
-        if (insideMultiLineComment) {
-            throw new IllegalStateException("Multiline comment did not terminate!");
-        }
 
         return true;
     }

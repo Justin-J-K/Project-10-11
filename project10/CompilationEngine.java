@@ -11,6 +11,7 @@ public class CompilationEngine {
     public CompilationEngine(JackTokenizer tokenizer, File file) {
         jackTokenizer = tokenizer;
         outputFile = file;
+        // try to create a new file writer
         try {
             writer = new BufferedWriter(new FileWriter(outputFile));
         } catch (IOException e) {
@@ -122,25 +123,14 @@ public class CompilationEngine {
     }
 
     private void compileSymbol(char symbol) {
+        // check if valid
         if (jackTokenizer.tokenType() != TokenType.SYMBOL ||
                 jackTokenizer.symbol()  != symbol
         ) {
             throw new IllegalStateException("syntax error: expected '" + symbol + "'");
         }
-
-        switch (symbol) {
-            case '<':
-                writeTag(TokenType.SYMBOL, "&lt;");
-                break;
-            case '>':
-                writeTag(TokenType.SYMBOL, "&gt;");
-                break;
-            case '&':
-                writeTag(TokenType.SYMBOL, "&amp;");
-                break;
-            default:
-                writeTag(TokenType.SYMBOL, symbol);
-        }
+        
+        writeTag(TokenType.SYMBOL, symbol);
 
         advanceTokenizer();
     }
@@ -149,11 +139,13 @@ public class CompilationEngine {
         if (jackTokenizer.tokenType() != TokenType.IDENTIFIER) 
             throw new IllegalStateException("syntax error: expected identifier");
         
+        // write identifier tag
         writeTag(TokenType.IDENTIFIER, jackTokenizer.identifier());
         advanceTokenizer();
     }
 
     private void compileVoidOrType() {
+        // check if void
         if (jackTokenizer.tokenType() == TokenType.KEYWORD &&
                 jackTokenizer.keyWord() == Keyword.VOID
         ) {
@@ -170,8 +162,10 @@ public class CompilationEngine {
                 throw new IllegalStateException("syntax error: expected type");
             }
 
+            // compile the keyword type
             writeTag(TokenType.KEYWORD, jackTokenizer.keyWord());
         } else if (jackTokenizer.tokenType() == TokenType.IDENTIFIER) {
+            // compile the identifier type
             writeTag(TokenType.IDENTIFIER, jackTokenizer.identifier());
         } else {
             throw new IllegalStateException("syntax error: expected type or identifier");
@@ -285,6 +279,7 @@ public class CompilationEngine {
         ) {
             throw new IllegalArgumentException("syntax error: expected " + keyword.toString());
         }
+        // write the keyword
         writeTag(TokenType.KEYWORD, keyword);
         advanceTokenizer();
     }
@@ -459,13 +454,16 @@ public class CompilationEngine {
 
         switch (jackTokenizer.tokenType()) {
             case IDENTIFIER:
+                // compile identifier
                 compileIdentifier();
                 if (jackTokenizer.tokenType() == TokenType.SYMBOL) {
+                    // compile method call
                     if (jackTokenizer.symbol() == '(' ||
                             jackTokenizer.symbol() == '.'
                     ) {
                         compileSubroutineCallNoIdentifier();
                     } else if (jackTokenizer.symbol() == '[') {
+                        // compile array access
                         compileSymbol('[');
                         compileExpression();
                         compileSymbol(']');
@@ -473,10 +471,12 @@ public class CompilationEngine {
                 }
                 break;
             case INT_CONST:
+                // compile integer
                 writeTag(TokenType.INT_CONST, jackTokenizer.intVal() + "");
                 advanceTokenizer();
                 break;
             case SYMBOL:
+                // compile parentheses
                 if (jackTokenizer.symbol() == '(') {
                     compileSymbol('(');
                     compileExpression();
@@ -484,6 +484,7 @@ public class CompilationEngine {
                 } else if (jackTokenizer.symbol() == '-' ||
                         jackTokenizer.symbol() == '~'
                 ) {
+                    // compile unary operations
                     compileSymbol(jackTokenizer.symbol());
                     compileTerm();
                 } else {
@@ -491,10 +492,12 @@ public class CompilationEngine {
                 }
                 break;
             case STRING_CONST:
+                // compile string constants
                 writeTag(TokenType.STRING_CONST, jackTokenizer.stringVal());
                 advanceTokenizer();
                 break;
             case KEYWORD:
+                // compiles keywords
                 if (currentTokenKeywordConstant()) {
                     compileKeyword(jackTokenizer.keyWord());
                 } else {
@@ -534,11 +537,13 @@ public class CompilationEngine {
     }
 
     private boolean currentTokenIsStartExpression() {
+        // check if current token is the start of an expression
         boolean isKeywordConstant = currentTokenKeywordConstant(), 
                 startsWithIdentifier = jackTokenizer.tokenType() == TokenType.IDENTIFIER,
                 startsWithUnaryOp = jackTokenizer.tokenType() == TokenType.SYMBOL &&
                     (jackTokenizer.symbol() == '-' ||
-                    jackTokenizer.symbol() == '~');
+                    jackTokenizer.symbol() == '~' ||
+                    jackTokenizer.symbol() == '(');
         
         return jackTokenizer.tokenType() == TokenType.INT_CONST || 
                 jackTokenizer.tokenType() == TokenType.STRING_CONST ||
@@ -546,6 +551,7 @@ public class CompilationEngine {
     }
 
     private boolean currentTokenIsOp() {
+        // check if current topen is an operator
         if (jackTokenizer.tokenType() != TokenType.SYMBOL)
             return false;
         char symbol = jackTokenizer.symbol();
@@ -555,6 +561,7 @@ public class CompilationEngine {
     }
 
     private boolean currentTokenIsPrimitive() {
+        // check if current token is a primitive
         return jackTokenizer.tokenType() == TokenType.KEYWORD && 
                 (jackTokenizer.keyWord() == Keyword.INT ||
                 jackTokenizer.keyWord() == Keyword.CHAR ||
@@ -562,6 +569,7 @@ public class CompilationEngine {
     }
 
     private boolean currentTokenKeywordConstant() {
+        // check if current token is a keyword constant
         return jackTokenizer.tokenType() == TokenType.KEYWORD &&
                 (jackTokenizer.keyWord() == Keyword.TRUE ||
                 jackTokenizer.keyWord() == Keyword.FALSE ||
@@ -570,11 +578,13 @@ public class CompilationEngine {
     }
 
     private boolean currentTokenIsType() {
+        // check if current token is a type
         return jackTokenizer.tokenType() == TokenType.IDENTIFIER ||
                 currentTokenIsPrimitive();
     }
 
     private void writeLine(String line) {
+        // write line to file
         try {
             writer.write(line + "\n");
         } catch (IOException e) {
@@ -583,29 +593,49 @@ public class CompilationEngine {
     }
 
     private void writeStartTag(String tagName) {
+        // write <tagName>
         writeLine(createStartTag(tagName));
     }
 
     private void writeEndTag(String tagName) {
+        // write </tagName>
         writeLine(createEndTag(tagName));
     }
 
     private void writeTag(String tagName, String text) {
+        // write <tagName> text </tagName
         writeLine(createStartTag(tagName) + text + createEndTag(tagName));
     }
 
+    // overloaded method
     private void writeTag(String tagName, char text) {
-        writeTag(tagName, "" + text);
+        // compile special symbol cases
+        switch (text) {
+            case '<':
+                writeTag(TokenType.SYMBOL, "&lt;");
+                break;
+            case '>':
+                writeTag(TokenType.SYMBOL, "&gt;");
+                break;
+            case '&':
+                writeTag(TokenType.SYMBOL, "&amp;");
+                break;
+            default:
+                writeTag(tagName, "" + text);
+        }
     }
 
+    // overloaded method
     private void writeTag(TokenType tagName, String text) {
         writeTag(tagName.toString(), text);
     }
 
+    // overloaded method
     private void writeTag(TokenType tagName, char text) {
         writeTag(tagName.toString(), text);
     }
 
+    // overloaded method
     private void writeTag(TokenType tagName, Keyword text) {
         writeTag(tagName, text.toString());
     }

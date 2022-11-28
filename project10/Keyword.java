@@ -32,6 +32,7 @@ public enum Keyword {
         this.mnemonic = mnemonic;
     }
 
+    // get mnemonic of keyword enum
     public String getMnemonic() {
         return mnemonic;
     }

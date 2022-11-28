@@ -10,10 +10,7 @@ public class JackAnalyzer {
     private CompilationEngine compEngine;
 
     public int run(String[] args) {
-        args = new String[1];
-        args[0] = "Main.jack";
-
-
+        // check for argument length
         if (args.length != 1) {
             printUsage();
             return -1;
@@ -21,6 +18,7 @@ public class JackAnalyzer {
 
         File fileOrDirectory = new File(args[0]);
 
+        // analyze file or directory of files
         try {
             if (fileOrDirectory.isDirectory()) {
                 analyzeFiles(fileOrDirectory);
@@ -29,6 +27,7 @@ public class JackAnalyzer {
             }
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.err.println(e.getMessage());
+            e.printStackTrace();
             return -1;
         }
         return 0;
@@ -41,6 +40,7 @@ public class JackAnalyzer {
         if (!lowerFilename.endsWith(".jack"))
             throw new IllegalArgumentException("Filename must end with .jack!");
 
+        // compile file
         JackTokenizer jackTokenizer = new JackTokenizer(file);
         String outputFilename = filename.substring(0, 
                 lowerFilename.lastIndexOf(".jack")) + ".xml";
@@ -51,8 +51,9 @@ public class JackAnalyzer {
     }
 
     private void analyzeFiles(File directory) {
+        // iterate over directory non-recursively
         for (File f : directory.listFiles()) {
-            if (f.isFile() && !f.getName().toLowerCase().endsWith(".jack")) {
+            if (f.isFile() && f.getName().toLowerCase().endsWith(".jack")) {
                 analyzeFile(f);
             }
         }
