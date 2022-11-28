@@ -44,7 +44,9 @@ public class JackAnalyzer {
         JackTokenizer jackTokenizer = new JackTokenizer(file);
         String outputFilename = filename.substring(0, 
                 lowerFilename.lastIndexOf(".jack")) + ".vm";
-        File outputFile = new File(outputFilename);
+        File outputFile = new File(file.getParentFile(), outputFilename);
+
+        System.out.println("Compiling to " + outputFile.getPath());
         
         compEngine = new CompilationEngine(jackTokenizer, outputFile);
         compEngine.compileClass();
@@ -53,7 +55,7 @@ public class JackAnalyzer {
     private void analyzeFiles(File directory) {
         // iterate over directory non-recursively
         for (File f : directory.listFiles()) {
-            if (f.isFile() && !f.getName().toLowerCase().endsWith(".jack")) {
+            if (f.isFile() && f.getName().toLowerCase().endsWith(".jack")) {
                 analyzeFile(f);
             }
         }

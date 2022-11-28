@@ -479,8 +479,6 @@ public class CompilationEngine {
             advanceTokenizer();
             compileTerm();
 
-            System.out.println(op);
-
             switch (op) {
                 case '+':
                     writer.writeArithmetic(Command.ADD);
@@ -501,7 +499,6 @@ public class CompilationEngine {
                     writer.writeArithmetic(Command.OR);
                     break;
                 case '<':
-                    System.out.println("writing");
                     writer.writeArithmetic(Command.LT);
                     break;
                 case '>':
@@ -581,9 +578,10 @@ public class CompilationEngine {
             case KEYWORD:
                 // compiles keywords
                 if (currentTokenKeywordConstant()) {
-                    compileKeyword(jackTokenizer.keyWord());
+                    Keyword keyword = jackTokenizer.keyWord();
+                    compileKeyword(keyword);
 
-                    switch (jackTokenizer.keyWord()) {
+                    switch (keyword) {
                         case TRUE:
                             writer.writePush(Segment.CONST, -1);
                             break;
