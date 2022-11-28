@@ -1,7 +1,5 @@
 
 *.class
 .DS_Store
-.DS_Store
 *.jack
 *.xml
-.DS_Store
