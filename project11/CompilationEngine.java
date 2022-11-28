@@ -113,7 +113,7 @@ public class CompilationEngine {
         compileSymbol(')');
 
         // subroutineBody
-        compileSubRoutineBody();
+        compileSubRoutineBody(keyword);
     }
 
     private void compileSymbol(char symbol) {
@@ -192,7 +192,7 @@ public class CompilationEngine {
         }
     }
 
-    private void compileSubRoutineBody() {
+    private void compileSubRoutineBody(Keyword keyword) {
         // {
         compileSymbol('{');
         
@@ -205,6 +205,15 @@ public class CompilationEngine {
 
         // write function declaration
         writer.writeFunction(className + "." + subroutineName, symbolTable.varCount(Kind.VAR));
+
+        if (keyword == Keyword.CONSTRUCTOR) {
+            writer.writePush(Segment.CONST, symbolTable.varCount(Kind.FIELD));
+            writer.writeCall("Memory.alloc", 1);
+            writer.writePop(Segment.POINTER, 0);
+        } else if (keyword == Keyword.METHOD) {
+            writer.writePush(Segment.ARG, 0);
+            writer.writePop(Segment.POINTER, 0);
+        }
 
         // statements
         compileStatements();
@@ -282,6 +291,8 @@ public class CompilationEngine {
 
         // ;
         compileSymbol(';');
+
+        writer.writePop(Segment.TEMP, 0);
     }
 
     private void compileSubroutineCallNoIdentifier(String identifier) {
@@ -306,13 +317,19 @@ public class CompilationEngine {
         if (objectName != null) {
             String typeOf = symbolTable.typeOf(objectName);
 
+            System.out.println(typeOf);
+
             if (typeOf != null) {   // method
                 objectType = typeOf;
                 numArgs++;
                 writer.writePush(symbolTable.kindOf(objectName), symbolTable.indexOf(objectName));
+                System.out.println(objectName + " " + numArgs);
             } else { // otherwise function or constructor
                 objectType = objectName;
             }
+        } else { // method
+            writer.writePush(Segment.POINTER, 0);
+            numArgs++;
         }
 
         // (
@@ -326,6 +343,7 @@ public class CompilationEngine {
 
         // write function as VM code
         writer.writeCall(objectType + "." + name, numArgs);
+        System.out.println(objectType + "." + name + " " + numArgs);
     }
 
     private void compileSubroutineCall() {
@@ -553,9 +571,10 @@ public class CompilationEngine {
                         jackTokenizer.symbol() == '~'
                 ) {
                     // compile unary operations
-                    compileSymbol(jackTokenizer.symbol());
+                    char unarySymbol = jackTokenizer.symbol();
+                    compileSymbol(unarySymbol);
                     compileTerm();
-                    writer.writeArithmetic(jackTokenizer.symbol() == '~' ? Command.NOT :
+                    writer.writeArithmetic(unarySymbol == '~' ? Command.NOT :
                             Command.NEG);
                 } else {
                     throw new IllegalStateException("syntax error: unexpected symbol");
@@ -583,7 +602,9 @@ public class CompilationEngine {
 
                     switch (keyword) {
                         case TRUE:
-                            writer.writePush(Segment.CONST, -1);
+                            writer.writePush(Segment.CONST, 1);
+                            writer.writeArithmetic(Command.NEG);
+                            // writer.writeArithmetic(Command.NOT);
                             break;
                         case FALSE: case NULL:
                             writer.writePush(Segment.CONST, 0);

@@ -200,6 +200,7 @@ public class JackTokenizer {
         }
     }
 
+    // append token to list of tokens
     private void appendToken(StringBuilder builder) {
         if (builder.length() > 0) {
             tokens.offer(builder.toString());

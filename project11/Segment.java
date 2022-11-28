@@ -14,6 +14,7 @@ public enum Segment {
         mnemonic = mne;
     }
 
+    // get mnemonic of segment
     public String getMnemonic() {
         return mnemonic;
     }

@@ -15,6 +15,7 @@ public enum Command {
         mnemonic = mne;
     }
 
+    // get mnemonnic of command
     public String getMnemonic() {
         return mnemonic;
     }
